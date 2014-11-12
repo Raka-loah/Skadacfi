@@ -8,7 +8,7 @@ Usage:
 <ol>
 <li>Create a chat window named 'Skada', not case sensitive, you can use 'SKADA' or 'SkAdA' or whatever.</li>
 <li>Unsubscribe all chat messages from that chat window. Or just keep them to mess with your own eyes, your call.</li>
-<li>Reload ui (using slash command /reload of course).</li>
+<li>Use slash command /skadacfi or /scfi to embed.</li>
 <li>Whenever in doubt, reload ui.</li>
 </ol>
 
