@@ -26,19 +26,19 @@ end
 local L = {}
 if (GetLocale() == 'zhCN') then
 	L = {
-		'SkadaCFI: 请新建一个新的"%s"聊天窗口，然后执行/skadacfi或/scfi。',
-		'SkadaCFI: 整合失败。请手动/skadacfi或/scfi再试一次。',
-		'SkadaCFI: 执行整合中……',
-		'SkadaCFI: 尝试整合Skada窗口 %d 到聊天窗口 %s ...',
+		'|cFFFF5151SkadaCFI|r: 请新建一个新的"%s"聊天窗口，然后执行/SkadaCFI或/scfi。',
+		'|cFFFF5151SkadaCFI|r: 整合失败。找不到Skada窗口%d。',
+		'|cFFFF5151SkadaCFI|r: 执行整合中……',
+		'|cFFFF5151SkadaCFI|r: 尝试整合Skada窗口 %d 到聊天窗口 %s ...',
 		'===SCFI:当前Skada窗口===',
 		'窗口ID：%d ，窗口标题：%s '
 	}
 else
 	L = {
-		'SkadaCFI: Please Create a new chat tab called "%s" then /skadacfi or /scfi.',
-		'SkadaCFI: Integrate failed. Please manually /skadacfi or /scfi to try again.',
-		'SkadaCFI: Embedding...',
-		'SkadaCFI: Trying to embed Skada Window %d to Chat window %s ...',
+		'|cFFFF5151SkadaCFI|r: Please Create a new chat tab called "%s" then SkadaCFI or /scfi.',
+		'|cFFFF5151SkadaCFI|r: Integrate failed. Skada window #%d not found.',
+		'|cFFFF5151SkadaCFI|r: Embedding...',
+		'|cFFFF5151SkadaCFI|r: Trying to embed Skada Window %d to Chat window %s ...',
 		'===SCFI: Current Skada Windows===',
 		'Window ID： %d , Window Title: %s '
 	}
@@ -62,12 +62,17 @@ local function GetSkadaChatFrame(cname) --Find Chat Tab named cname
 end
 
 local function EmbedSkada(index, windex)
+	if not index then return end
+	if index == 0 or index > NUM_CHAT_WINDOWS then return end
 	local shown = false
 	local chattab = _G['ChatFrame' .. index]
 	local sw = Skada:GetWindows()
 	_, _, _, _, _, _, shown, _, _, _ = GetChatWindowInfo(index)
-	if #sw == 0 then
-		print(L[2])
+	if not sw[windex] then
+		print(string.format(L[2], windex))
+		if ScfiDB[windex] then
+			ScfiDB[windex] = nil
+		end
 		return
 	end
 	sw[windex].db.barwidth = chattab:GetWidth()						
@@ -123,8 +128,9 @@ function IDtoSW(cindex)
 end
 
 local function BindSkadaToChatFrame(index)
+	if not index then return end
+	if index == 0 or index > NUM_CHAT_WINDOWS then return end
 	local chattab = _G['ChatFrame' .. index]	-- that tab
-	local sw = Skada:GetWindows()
 	chattab:HookScript('OnShow', function(self)
 		ShowSkadaWindow(self:GetName():match('[%d-]$'))
 	end)
@@ -138,13 +144,13 @@ function ScfiCoreFunction()
 	for k, v in ipairs(ScfiDB) do
 		local i = GetSkadaChatFrame(v)
 		EmbedSkada(i, k)
-		BindSkadaToChatFrame(i)	-- job is done
+		BindSkadaToChatFrame(i)
 	end
 end
 
 --Try to embed on startup
-local frame = CreateFrame('Frame', nil)				-- to make skada window the same size as the chat window
-frame:RegisterEvent('PLAYER_ENTERING_WORLD')		-- we can't do this before skada windows are loaded, so just wait to the last moment
+local frame = CreateFrame('Frame', nil)
+frame:RegisterEvent('PLAYER_ENTERING_WORLD')
 frame:SetScript('OnEvent', function(self, event)
 	ScfiCoreFunction()
 	self:UnregisterAllEvents()
@@ -158,12 +164,10 @@ local function aphandler(msg)
 	if string.len(arg1) > 0 and string.len(arg2) > 0 then
 		print(string.format(L[4], arg1, arg2))
 		local i = GetSkadaChatFrame(arg2)
-		if i ~= 0 then
+		if tonumber(i) ~= 0 then
 			EmbedSkada(i, tonumber(arg1))
 			BindSkadaToChatFrame(i)
 			ScfiDB[tonumber(arg1)] = arg2
-		else
-			print(string.format(L[1], arg2))
 		end
 	elseif string.lower(arg1) == 'reset' then
 		ScfiDB = {
