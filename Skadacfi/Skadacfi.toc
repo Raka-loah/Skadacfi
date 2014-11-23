@@ -2,10 +2,11 @@
 ## Title: Skada Chat Frame Integrator
 ## Title-zhCN: Skada 聊天窗口整合
 ## Author: Raka
-## Version: 0.2
+## Version: 0.3
 ## X-eMail: i@lotc.cc
 ## Dependencies: Skada
-## Notes: Integrates Skada Windows to Chat tab called 'Skada'.
-## Notes-zhCN: 整合Skada窗口到名为"Skada"的聊天框
+## Notes: Integrates Skada Windows to Chat tabs.
+## Notes-zhCN: 整合Skada窗口到特定的聊天框
+## SavedVariablesPerCharacter: ScfiDB
 
 core.lua
