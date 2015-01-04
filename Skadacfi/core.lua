@@ -4,15 +4,15 @@ Embed Skada Damage Meter window to a Chat window.
 
 Usage:
 1. Create chat windows you want Skada window to fit in.
-2. Unsubscribe all chat messages from the chat windows you just created, or leave them there to mess with your own eyes, your call.
-3. By default, the first Skada window will be embedded into "Skada" chat window, but there're more options now, see below.
-3-1. You can manually embed a Skada window to any Chat window you want by using command: /scfi n x , where n is the number of Skada Window, x is the name of the chat window. For example, if you want to embed the second Skada window into Chat window called "Threat", use command /scfi 2 threat .
-3-2. The addon will automatically remember this operation and save it to a per-character settings file.
-3-3. After that you can use /scfi to embed all windows you previously done embedding.
-3-4. If you don't know the numbers of Skada Windows, use command "/scfi stat" to get them.
-3-5. If you want to reset all the settings you have done before, use command "/scfi reset" and addon will fall back to its default behaviors after a UI reload.
-4. If this addon failed to embed Skada windows, use /skadacfi or /scfi to manually embed.
-5. When in doubt, /reload.
+2. By default, the first Skada window will be embedded into "Skada" chat window, but there're more options now, see below.
+2-1. You can manually embed a Skada window to any Chat window you want by using command: /scfi n x , where n is the number of Skada Window, x is the name of the chat window. For example, if you want to embed the second Skada window into Chat window called "Threat", use command /scfi 2 threat .
+2-2. The addon will automatically remember this operation and save it to a per-character settings file.
+2-3. After that you can use /scfi to embed all windows you previously done embedding.
+2-4. If you don't know the numbers of Skada Windows, use command "/scfi stat" to get them.
+2-5. If you want to release a Skada window from chat window, use command "/scfi rm n", where n is the number of the Skada Window. Or just reset(see below) and re-integrate again.
+2-6. If you want to reset all the settings you have done before, use command "/scfi reset" and addon will fall back to its default behaviors after a UI reload.
+3. If this addon failed to embed Skada windows, use /skadacfi or /scfi to manually embed.
+4. When in doubt, /reload.
 ]]
 local Skada = Skada
 
@@ -29,18 +29,20 @@ if (GetLocale() == 'zhCN') then
 		'|cFFFF5151SkadaCFI|r: 请新建一个新的"%s"聊天窗口，然后执行/SkadaCFI或/scfi。',
 		'|cFFFF5151SkadaCFI|r: 整合失败。找不到Skada窗口%d。',
 		'|cFFFF5151SkadaCFI|r: 执行整合中……',
-		'|cFFFF5151SkadaCFI|r: 尝试整合Skada窗口 %d 到聊天窗口 %s ...',
+		'|cFFFF5151SkadaCFI|r: 尝试整合Skada窗口 #%d 到聊天窗口 %s ...',
 		'===SCFI:当前Skada窗口===',
-		'窗口ID：%d ，窗口标题：%s '
+		'窗口ID：%d ，窗口标题：%s ',
+		'|cFFFF5151SkadaCFI|r: 释放Skada窗口 #%d ...'
 	}
 else
 	L = {
 		'|cFFFF5151SkadaCFI|r: Please Create a new chat tab called "%s" then SkadaCFI or /scfi.',
 		'|cFFFF5151SkadaCFI|r: Integrate failed. Skada window #%d not found.',
 		'|cFFFF5151SkadaCFI|r: Embedding...',
-		'|cFFFF5151SkadaCFI|r: Trying to embed Skada Window %d to Chat window %s ...',
+		'|cFFFF5151SkadaCFI|r: Trying to embed Skada Window #%d to Chat window %s ...',
 		'===SCFI: Current Skada Windows===',
-		'Window ID： %d , Window Title: %s '
+		'Window ID： %d , Window Title: %s ',
+		'|cFFFF5151SkadaCFI|r: Releasing Skada Window #%d ...'
 	}
 end
 
@@ -97,24 +99,31 @@ function ShowSkadaWindow(cindex)
 	if not cindex then return end
 	local chattab = _G['ChatFrame' .. cindex]
 	local windex = IDtoSW(cindex)
-	local sw = Skada:GetWindows()
-	if sw[windex].db.hidden then
-		sw[windex].db.hidden = false
+	if windex ~= 0 then
+		local sw = Skada:GetWindows()
+		if sw[windex].db.hidden then
+			sw[windex].db.hidden = false
+		end
+		sw[windex].bargroup:ClearAllPoints()
+		if sw[windex].db.reversegrowth then
+			sw[windex].bargroup:SetPoint('TOP', chattab, 'TOP', 0, 0)
+		else
+			sw[windex].bargroup:SetPoint('TOP', chattab, 'TOP', 0, (sw[windex].db.enabletitle and -1 * sw[windex].db.barheight) or 0)
+		end
+		sw[windex]:Show()
 	end
-	sw[windex].bargroup:ClearAllPoints()
-	if sw[windex].db.reversegrowth then
-		sw[windex].bargroup:SetPoint('TOP', chattab, 'TOP', 0, 0)
-	else
-		sw[windex].bargroup:SetPoint('TOP', chattab, 'TOP', 0, (sw[windex].db.enabletitle and -1 * sw[windex].db.barheight) or 0)
-	end
-	sw[windex]:Show()
 end
 
 function HideSkadaWindow(cindex)
 	if not cindex then return end
 	local windex = IDtoSW(cindex)
 	local sw = Skada:GetWindows()
-	sw[windex]:Hide()
+	if windex ~= 0 then
+		if not sw[windex].db.hidden then
+			sw[windex].db.hidden = true
+		end
+		sw[windex]:Hide()
+	end
 end
 
 function IDtoSW(cindex)
@@ -143,6 +152,9 @@ function ScfiCoreFunction()
 	if not ScfiDB then return end
 	for k, v in ipairs(ScfiDB) do
 		local i = GetSkadaChatFrame(v)
+		local chatframe = _G['ChatFrame' .. i]
+		ChatFrame_RemoveAllChannels(chatframe)
+		ChatFrame_RemoveAllMessageGroups(chatframe)
 		EmbedSkada(i, k)
 		BindSkadaToChatFrame(i)
 	end
@@ -162,12 +174,29 @@ SLASH_SCFI1, SLASH_SCFI2 = '/skadacfi', '/scfi'
 local function aphandler(msg)
 	local arg1, arg2 = msg:match('^(%S*)%s*(.-)$')
 	if string.len(arg1) > 0 and string.len(arg2) > 0 then
-		print(string.format(L[4], arg1, arg2))
-		local i = GetSkadaChatFrame(arg2)
-		if tonumber(i) ~= 0 then
-			EmbedSkada(i, tonumber(arg1))
-			BindSkadaToChatFrame(i)
-			ScfiDB[tonumber(arg1)] = arg2
+		if string.lower(arg1) ~= 'rm' then
+			print(string.format(L[4], arg1, arg2))
+			local i = GetSkadaChatFrame(arg2)
+			if tonumber(i) ~= 0 then
+				EmbedSkada(i, tonumber(arg1))
+				BindSkadaToChatFrame(i)
+				ScfiDB[tonumber(arg1)] = arg2
+			end
+		else
+			print(string.format(L[7], arg2))
+			local i = tonumber(arg2)
+			local sw = Skada:GetWindows()
+			if sw[i] then
+				if ScfiDB[i] then
+					ScfiDB[i] = nil
+				end
+				sw[i].db.barslocked = false
+				sw[i].db.hidden = false
+				Skada:ApplySettings()
+				sw[i]:UpdateDisplay(true)
+			else
+				print(string.format(L[2], i))
+			end
 		end
 	elseif string.lower(arg1) == 'reset' then
 		ScfiDB = {
