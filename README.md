@@ -10,5 +10,3 @@ Usage:
 <li>Use slash command /skadacfi or /scfi to embed.</li>
 <li>Whenever in doubt, reload ui.</li>
 </ol>
-
-P.s: this addon will only affect your FIRST Skada window.

@@ -153,10 +153,12 @@ function ScfiCoreFunction()
 	for k, v in ipairs(ScfiDB) do
 		local i = GetSkadaChatFrame(v)
 		local chatframe = _G['ChatFrame' .. i]
-		ChatFrame_RemoveAllChannels(chatframe)
-		ChatFrame_RemoveAllMessageGroups(chatframe)
-		EmbedSkada(i, k)
-		BindSkadaToChatFrame(i)
+		if chatframe then
+			ChatFrame_RemoveAllChannels(chatframe)
+			ChatFrame_RemoveAllMessageGroups(chatframe)
+			EmbedSkada(i, k)
+			BindSkadaToChatFrame(i)
+		end
 	end
 end
 
@@ -193,7 +195,6 @@ local function aphandler(msg)
 				sw[i].db.barslocked = false
 				sw[i].db.hidden = false
 				Skada:ApplySettings()
-				sw[i]:UpdateDisplay(true)
 			else
 				print(string.format(L[2], i))
 			end
@@ -202,6 +203,11 @@ local function aphandler(msg)
 		ScfiDB = {
 			[1] = 'skada'
 		}
+		for _, win in ipairs(Skada:GetWindows()) do
+			win.db.barslocked = false
+			win.db.hidden = false
+		end
+		Skada:ApplySettings()
 		ReloadUI()
 	elseif string.lower(arg1) == 'stat' then
 		print(L[5])
